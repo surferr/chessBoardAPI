@@ -1,3 +1,4 @@
+using chessBoard.DA.Data.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -11,6 +12,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using chessBoard.DA.Data.ServiceInterfaces;
+using chessBoard.BL.ServiceInterfaces;
+using chessBoard.BL.Services;
 
 namespace chessBoardAPI
 {
@@ -26,12 +31,18 @@ namespace chessBoardAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddScoped(typeof(IChessBoardService), typeof(ChessBoardService));
+            services.AddScoped(typeof(IChessBoardContext), typeof(ChessBoardContext));
+            
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "chessBoardAPI", Version = "v1" });
             });
+
+            services.AddDbContext<ChessBoardContext>(options => 
+                options.UseSqlServer(Configuration.GetConnectionString("ChessBoardConnection")), 
+                ServiceLifetime.Transient);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,7 +59,7 @@ namespace chessBoardAPI
 
             app.UseRouting();
 
-            app.UseAuthorization();
+//            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
