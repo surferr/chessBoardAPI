@@ -40,10 +40,5 @@ namespace chessBoard.Core.Helpers
             position = position.ToUpper();
             return (position[0] - 'A', position[1] - '1');
         }
-
-        public static bool IsMovementCorrect (ChessPiece chesspiece, string toPosition)
-        {
-            return true;
-        }
     }
 }

@@ -39,40 +39,45 @@ namespace chessBoard.BL.Services
 
         public async Task<BaseResponse> MoveChessPiece(int id, string from, string to, CancellationToken cancellationToken)
         {
-            var chessBoard = await GetChessBoard(id, cancellationToken);
-            if ( chessBoard == null)
+            using (var transaction = await _chessBoardContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken))
             {
-                return BaseResponse.Error("Chessboard not found");
+                var chessBoard = await GetChessBoard(id, cancellationToken);
+                if (chessBoard == null)
+                {
+                    return BaseResponse.Error("Chessboard not found");
+                }
+
+                if (!ChessBoardUtils.IsPositionCorrect(from))
+                {
+                    return BaseResponse.Error($"Position {from} is not correct");
+                }
+
+                if (!ChessBoardUtils.IsPositionCorrect(to))
+                {
+                    return BaseResponse.Error($"Position {to} is not correct");
+                }
+
+                var chesspiece = chessBoard.GetChessPiece(from);
+                if (chesspiece is null)
+                {
+                    return BaseResponse.Error($"No chesspiece at position {from}");
+                }
+
+                if (!ChessBoardMovements.IsMovementCorrect(chesspiece, to))
+                {
+                    return BaseResponse.Error($"Movement from {from} to {to} for {chesspiece.Type.ToString()} is not correct");
+                }
+
+                chessBoard.RemoveChessPiece(to);
+
+                chesspiece.Position = to;
+
+                await _chessBoardContext.SaveAsync(cancellationToken);
+
+                transaction.Commit();
+
+                return BaseResponse.Success();
             }
-
-            if (!ChessBoardUtils.IsPositionCorrect(from))
-            {
-                return BaseResponse.Error($"Position {from} is not correct");
-            }
-
-            if (!ChessBoardUtils.IsPositionCorrect(to))
-            {
-                return BaseResponse.Error($"Position {to} is not correct");
-            }
-
-            var chesspiece = chessBoard.GetChessPiece(from);
-            if (chesspiece is null)
-            {
-                return BaseResponse.Error($"No chesspiece at position {from}");
-            }
-
-            if (!ChessBoardUtils.IsMovementCorrect(chesspiece, to))
-            {
-                return BaseResponse.Error($"Movement from {from} to {to} for {chesspiece.Type.ToString()} is not correct");
-            }
-
-            chessBoard.RemoveChessPiece(to);
-
-            chesspiece.Position = to;
-
-            await _chessBoardContext.SaveAsync(cancellationToken);
-
-            return BaseResponse.Success();
         }
     }
 }
